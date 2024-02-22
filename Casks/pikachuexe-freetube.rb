@@ -1,13 +1,8 @@
-cask "freetube" do
-  # Change this when release contains arm64 version
-  arch arm: "x64", intel: "x64"
-
+cask "pikachuexe-freetube" do
   version "0.19.1"
-  sha256  arm:   "4a8f77000e01a6123a3252f5217744d6e9836f78642c222081917e2318fa1c60",
-          intel: "4a8f77000e01a6123a3252f5217744d6e9836f78642c222081917e2318fa1c60"
+  sha256 "0ff50bd11a372166b7860c7eedfe8757b1411b71b4356ea40849fee8c6b7ccdb"
 
-  url "https://github.com/FreeTubeApp/FreeTube/releases/download/v#{version}-beta/freetube-#{version}-mac-#{arch}.dmg",
-    verified: "https://github.com/FreeTubeApp/FreeTube/releases/download/"
+  url "https://github.com/PikachuEXE/homebrew-FreeTube/releases/download/v#{version}-beta/freetube-#{version}-mac-arm64.dmg"
   name "FreeTube"
   desc "YouTube player focusing on privacy"
   homepage "https://github.com/FreeTubeApp/FreeTube"
@@ -17,6 +12,8 @@ cask "freetube" do
     regex(/^v?(\d+(?:\.\d+)+)/i)
   end
 
+  conflicts_with cask: "freetube"
+  depends_on arch: :arm64
   depends_on macos: ">= :high_sierra"
 
   app "FreeTube.app"
@@ -29,8 +26,4 @@ cask "freetube" do
     "~/Library/Preferences/io.freetubeapp.freetube.plist",
     "~/Library/Saved Application State/io.freetubeapp.freetube.savedState",
   ]
-
-  caveats do
-    requires_rosetta
-  end
 end
