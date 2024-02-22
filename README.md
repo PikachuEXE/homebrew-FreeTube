@@ -4,16 +4,24 @@
 
 #### FreeTube’s Homebrew Tap for Apple Silicon
 
-Install a native Apple Silicon build of FreeTube with this Homebrew Tap maintained by the FreeTube project.[^Intel]
-
-[^Intel]: FreeTube for Intel Macs can also be installed with this tap, but it’s optional. Simply use Homebrew without this tap for Intel Mac installations.
+Install a native Apple Silicon build of FreeTube with this Homebrew Tap maintained by the FreeTube project.
 
 If you install FreeTube via Homebrew without this tap, you get an _Intel-native build_ that requires Rosetta 2 in order to run on Apple Silicon.
+(Intel Mac users, [see below](#intel-section).)
 
 
-#### Quick Installation
+#### Quick Installation on Apple Silicon
 
 1. Ensure [Homebrew](https://brew.sh) is installed.
+
+1. If you already installed FreeTube: uninstall it.
+
+   If installed from the main Homebrew cask (not this tap):
+
+    ```bash
+    # Uninstall the cask, while keeping your settings.
+    brew uninstall freetube
+    ```
 
 1. Install FreeTube with a single command:
 
@@ -58,6 +66,18 @@ If you install FreeTube via Homebrew without this tap, you get an _Intel-native 
 
   * [Disabling Gatekeeper for one application only](https://github.com/disable-gatekeeper/disable-gatekeeper.github.io/tree/master?tab=readme-ov-file#disabling-gatekeeper-for-one-application-only "https://github.com/disable-gatekeeper/disable-gatekeeper.github.io/tree/master?tab=readme-ov-file#disabling-gatekeeper-for-one-application-only") on [https://disable-gatekeeper.github.io](https://disable-gatekeeper.github.io "https://disable-gatekeeper.github.io").
 -->
+
+
+<a name="intel-section"></a>
+#### Quick Installation on Intel Macs
+
+1. Ensure [Homebrew](https://brew.sh) is installed.
+
+1. Use Homebrew without this tap to install FreeTube:
+
+```bash
+brew install freetube
+```
 
 
 #### Homebrew documentation
