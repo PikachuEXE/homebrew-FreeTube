@@ -1,0 +1,163 @@
+name: Build and Release (Upstream Trigger)
+
+on:
+  # NOTE: Repository dispatch events will only trigger a workflow run if the workflow is committed to the target’s default branch. (In other words, make sure this file is on the master branch of the Homebrew Tap.)
+  repository_dispatch:
+    types:
+      - upstream-release
+
+jobs:
+  display-received-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Display Event Information
+          # The ${{ github.event.action }} expression typically expands to the custom event type that triggered the workflow, i.e., 'upstream-release'.
+        run: echo "Received event '${{ github.event.action }}' from '${{ github.event.client_payload.release.repository }}'"
+
+      - name: Display Information from Dispatching Repository
+        run: |
+          echo "Dispatching repository provided the following information:"
+          echo "  Node version: ${{ github.event.client_payload.node.version }}"
+          echo "  Release ID: ${{ github.event.client_payload.release.id }}"
+          echo "  Release Tag Name: ${{ github.event.client_payload.release.tag_name }}"
+          echo "  Release Name: ${{ github.event.client_payload.release.name }}"
+          echo "  Release URL: ${{ github.event.client_payload.release.html_url }}"
+          echo "  Pre-release: ${{ github.event.client_payload.release.prerelease }}"
+
+  upstream-build:
+    # Use macos-14 for arm64 architecture: https://github.blog/changelog/2024-01-30-github-actions-introducing-the-new-m1-macos-runner-available-to-open-source/
+    # macos-latest refers to the macos-12 (x86_64) runner image until April–June 2024: https://github.blog/changelog/2024-01-30-github-actions-macos-14-sonoma-is-now-available/ and https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+    runs-on: macos-14
+    outputs:
+      extracted-package-version: "${{ steps.extract-version.outputs.package_version }}"
+
+    steps:
+      - name: Checkout FreeTube Repository at the Provided Release Tag
+        uses: actions/checkout@v4
+        with:
+          repository: FreeTubeApp/FreeTube
+          ref: "${{ github.event.client_payload.release.tag_name }}"
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "${{ github.event.client_payload.node.version }}"
+          # Cache the global `yarn cache dir` for faster builds by reusing dependencies.
+          # NOTE: Avoid caching the project-specific node_modules directory to prevent dependency conflicts and ensure proper cache updates. As the documentation to actions/cache states: "it can break across Node versions and won't work with npm ci."
+          cache: "yarn"
+
+      - name: Install Dependencies
+        # Use --frozen-lockfile for reproducible CI builds.
+        # NOTE: ---frozen-lockfile was renamed to --immutable in yarn 2.0.0.
+        # As of 2024-01-30, the macos-14 runner has yarn 1.22.19 installed.
+        # Upstream defines `yarn ci` as `yarn install --silent --frozen-lockfile` in package.json (see output of `jq '.scripts.ci' package.json`).
+        run: yarn ci
+
+      - name: Configure FreeTube Build
+        run: |
+          # Configure Electron Builder to build only the DMG target on macOS
+          sed -i '' "s/targets = Platform.MAC.createTarget(\[[^]]*\], arch)/targets = Platform.MAC.createTarget(\['DMG'\], arch)/" _scripts/build.js
+
+          # Configure Electron Builder artifactName to match the format used by upstream for artifact uploads
+          # NOTE: The ${arch} macro expands to arm64 on Apple Silicon, but this might not be documented yet.
+          # Verify the source code for accurate information:
+          # https://github.com/electron-userland/electron-builder/blob/master/packages/builder-util/src/arch.ts#L35-L51
+          jq '.build.artifactName = "${name}-${version}-${os}-${arch}.${ext}"' package.json > temp.json
+          mv -f temp.json package.json
+
+      - name: Build FreeTube
+        run: |
+          # Build the application and create Disk iMaGe (DMG)
+          yarn build:arm64
+          # Clean up build artifacts: remove .app directory
+          rm -rf build/mac-arm64
+
+      - name: Extract Package Version Number
+        id: extract-version
+        run: |
+          package_version="$(yq '.version' build/latest-mac.yml)"
+          echo "Package Version Number: $package_version"
+
+          # Export variable for later steps and jobs
+          echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
+
+      - name: Upload DMG Artifact
+        env:
+          PACKAGE_VERSION: "{{ steps.extract-version.outputs.package_version }}"
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeTube-DMG
+          path: "build/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg"
+          # Minimum artifact retention is 1 day
+          retention-days: 1
+          # Skip compression for faster upload of pre-compressed binary (DMG) file
+          compression-level: 0
+
+  upstream-release:
+    needs:
+      - upstream-build
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_VERSION: "${{ needs.upstream-build.outputs.extracted-package-version }}"
+
+    steps:
+      - name: Download Built DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: FreeTube-DMG
+          # Document use of default destination path
+          path: ${{ github.workspace }}
+
+      # Checkout Release Notes Template
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Use cone mode for sparse-checkout, as non-cone mode is deprecated in Git.
+          sparse-checkout: .github
+          # sparse-checkout: .github/release-notes-template.md
+          # sparse-checkout-cone-mode: false
+
+      - name: Generate Release Notes
+        run: |
+          # Set default template content
+          default_template="Release ${{ github.event.client_payload.release.tag_name }} for Apple Silicon Homebrew Tap."
+
+          # Check if the release notes template file exists and is readable
+          if [ ! -r ".github/release-notes-template.md" ]; then
+            echo "Warning: Release notes template not readable. Using simplified default."
+            echo "$default_template" > "${{ github.workspace }}/release_notes.md"
+            echo "Release notes generated and saved to: ${{ github.workspace }}/release_notes.md"
+          else
+            # Generate release notes using the template file
+            sed \
+              -e "s/%%{release.tag_name}%%/${{ github.event.client_payload.release.tag_name }}/g" \
+              -e "s/%%{release.download_url}%%/${{ github.event.client_payload.release.download_url }}/g" \
+              .github/release-notes-template.md \
+              > "${{ github.workspace }}/release_notes.md"
+            echo "Release notes generated and saved to: ${{ github.workspace }}/release_notes.md"
+          fi
+
+      - name: Create Release and Upload Artifact
+        id: gh-release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            "${{ github.workspace }}/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg"
+          fail_on_unmatched_files: true
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          tag_name: "${{ github.event.client_payload.release.tag_name }}"
+          name: "${{ github.event.client_payload.release.name }}"
+          # body: "Release for Apple Silicon Homebrew Tap."
+          body_path: "${{ github.workspace }}/release_notes.md"
+          prerelease: "${{ github.event.client_payload.release.prerelease }}"
+
+      - name: Print Release Information
+        run: |
+          echo "FreeTube built and released to Homebrew Tap for Apple Silicon:"
+          echo "  Release ID: ${{ steps.gh-release.outputs.id }}"
+          echo "  Release URL: ${{ steps.gh-release.outputs.url }}"
+          echo "  Download URL: ${{ fromJSON(steps.gh-release.outputs.assets)[0].browser_download_url }}"
+
+      - name: Completion Message
+        run: echo "Workflow 'Build and Release' completed successfully!"
