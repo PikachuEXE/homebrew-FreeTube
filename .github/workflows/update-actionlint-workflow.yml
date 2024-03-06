@@ -1,0 +1,199 @@
+name: Update actionlint Workflow
+
+# Overview: This GitHub Actions workflow is designed to update the actionlint workflow and configuration files by pulling the latest version from the Homebrew/brew repository. It runs on a schedule and can also be triggered manually.
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  # Allow running manually
+  # For more details: https://docs.github.com/en/actions/using-workflows/manually-running-a-workflow?tool=webui
+  workflow_dispatch:
+
+env:
+  repository_owner: PikachuEXE
+  # NOTE: Opted for Homebrew/brew’s actionlint workflow and configuration for this tap. Evaluated alternatives in Homebrew/actions and Homebrew/homebrew-core. homebrew-core’s workflow relies on a specific Docker runner image prepared by Homebrew, while the others do not.
+  source_repository_path: "Homebrew/brew"
+  source_repository_branch: master
+
+jobs:
+  update-workflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Get Latest Workflow and Configuration from ${{ env.source_repository_path }}
+        id: get-files
+        run: |
+          # Download actionlint workflow and configuration
+          echo "Downloading the latest actionlint workflow and configuration from ${{ env.source_repository_path }} repository."
+
+          # Use raw GitHub download for its strong ETag, an HTTP header identifying a resource’s version.
+          # GitHub API provides a weak ETag.
+          # Both lack useful last-modified (curl --remote-time) and content-disposition (curl --remote-header-name) HTTP headers.
+
+          # Specify file details
+          # A GitHub Actions problem matcher defines how to extract information from command output for annotating lines of code in PRs or the web UI.
+          file_paths=(
+            ".github/actionlint.yaml"              # actionlint configuration
+            ".github/actionlint-matcher.json"      # actionlint problem matcher
+            ".github/workflows/actionlint.yml"     # actionlint workflow file
+          )
+
+          # Iterate over file paths
+          for file_path in "${file_paths[@]}"; do
+            # Construct the ETag file path
+            directory_path="${file_path%/*}"
+            base_name="${file_path##*/}"
+            # Replace hyphen and dot with underscore in the basename
+            transformed_base_name="${base_name//[-.]/_}"
+
+            # Determine the prefix based on the directory path
+            case "$directory_path" in
+              *".github/workflows")
+                prefix="ghw"
+                ;;
+              *".github")
+                prefix="gh"
+                ;;
+              *)
+                # Provide a default value for unexpected cases
+                prefix="unexpected"
+                ;;
+            esac
+
+            etag_file_path=".github/etags/${prefix}_$transformed_base_name.txt"
+
+            # Save the current ETag value before downloading
+            if [ -r "$etag_file_path" ]; then
+              previous_etag=$(< "$etag_file_path")
+            else
+              # Remove any existing unreadable ETag file
+              rm -f "$etag_file_path"
+              # Ensure that the ETag directory exists
+              mkdir -p ".github/etags"
+              previous_etag=""
+            fi
+
+            # Download the file only if its ETag has changed
+            if ! curl --fail --silent --show-error --location \
+              --retry 3 --retry-all-errors \
+              --etag-compare "$etag_file_path" --etag-save "$etag_file_path" \
+              --remote-name --clobber \
+              --output-dir "$directory_path" --create-dirs \
+              --url "https://raw.githubusercontent.com/${{ env.source_repository_path }}/${{ env.source_repository_branch }}/$file_path"; then
+              echo "Error downloading $file_path from ${{ env.source_repository_path }} repository."
+              echo "::error::cURL error: Failed to download $file_path."
+              exit 1  # Exit with an error code to fail the workflow
+            fi
+
+            # Read the ETag value after downloading
+            current_etag=$(< "$etag_file_path")
+
+            # Check if the ETag values differ
+            if [ "$previous_etag" != "$current_etag" ]; then
+              echo "$file_path was downloaded."
+              # Export variable for the processing steps
+              echo "${prefix}_${transformed_base_name}_downloaded=true" >> "$GITHUB_ENV"
+            else
+              echo "$file_path up to date. No changes detected."
+              # Export variable for the processing steps
+              echo "${prefix}_${transformed_base_name}_downloaded=false" >> "$GITHUB_ENV"
+            fi
+
+          done
+
+          echo "All files up to date or downloaded successfully."
+
+      - name: Update Repository Owner Check in actionlint Workflow
+        run: |
+          if [ "${ghw_actionlint_yml_downloaded}" = "true" ]; then
+            echo "Updating repository owner in actionlint workflow."
+
+            # Replace 'Homebrew' with 'PikachuEXE' in .github/workflows/actionlint.yml
+            file=".github/workflows/actionlint.yml"
+  
+            # Check the current state of the condition before attempting a substitution
+            expected_condition="github.repository_owner == 'Homebrew'"
+            current_upstream_condition="$(yq eval '.jobs.workflow_syntax.if' "$file")"
+            # Isolate the repository owner name:
+            # yq eval '.jobs.workflow_syntax.if' "$file" | sed -n "s/.*github.repository_owner == '\(.*\)'.*/\1/p"
+  
+            # Warn and overwrite if condition is unexpected
+            if [ "$current_upstream_condition" != "$expected_condition" ]; then
+              # Use GitHub Actions annotation
+              line="$(yq eval '.jobs.workflow_syntax.if | line' "$file")"
+              echo "::warning file=${file},line=${line}::Unexpected 'workflow_syntax' condition in downloaded workflow"
+              echo "Upstream: $current_upstream_condition"
+              echo "Expected: $expected_condition"
+  
+              # Replace entire condition
+              if ! yq eval ".jobs.workflow_syntax.if = \"github.repository_owner == '${{ env.repository_owner }}'\"" "$file" --inplace --exit-status; then
+                echo "ERROR: An error occurred during the yq operation in 'workflow_syntax' step."
+                exit 1  # Exit with an error code to fail the workflow
+              fi
+            # Continue with substitution if condition is as expected
+            else
+              if ! yq eval '.jobs.workflow_syntax.if |= sub("Homebrew"; "${{ env.repository_owner }}")' "$file" --inplace --exit-status; then
+                echo "ERROR: An error occurred during the yq operation in 'workflow_syntax' step."
+                exit 1  # Exit with an error code to fail the workflow
+              fi
+            fi
+  
+            echo "Repository Owner Check substitution successful."
+          fi
+
+      - name: Reset 'config-variables' in actionlint Configuration
+        run: |
+          if [ "${gh_actionlint_yaml_downloaded}" = "true" ]; then
+            echo "Configuring actionlint to disallow GitHub configuration variables in workflow files."
+  
+            # Reset 'config-variables' to an empty array in .github/actionlint.yaml
+            # This excludes homebrew/brew’s configuration variables, prevents additional ones,
+            # and aligns with the empty 'config-variables' array in homebrew/core and homebrew/actions.
+            if ! yq eval '.config-variables = []' .github/actionlint.yaml --inplace --exit-status; then
+              echo "ERROR: An error occurred during the yq operation in 'Reset config-variables' step."
+              exit 1  # Exit with an error code to fail the workflow
+            fi
+  
+            echo "'config-variables' reset successful."
+          fi
+
+      - name: Check for Workflow Changes
+        run: |
+          # Check if there are any changes in the workflow files
+          if git diff --quiet; then
+            echo "No changes in workflows. Exiting."
+            exit 0
+          fi
+
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: '[create-pull-request] Update actionlint workflow'
+          delete-branch: true
+          title: 'Update actionlint workflow'
+          body: |
+            Updated actionlint workflow and configuration.
+              - Pulled the latest version from the Homebrew/brew repository
+              - Auto-generated by [create-pull-request][1]
+
+            [1]: https://github.com/peter-evans/create-pull-request
+          labels: |
+            actionlint
+            workflow-update
+            automated pr
+
+      - name: Display PR Information
+        if: ${{ steps.create-pr.outputs.pull-request-number }}
+        run: |
+          echo "${{ steps.create-pr.outputs.pull-request-operation }} Pull Request Number: ${{ steps.create-pr.outputs.pull-request-number }}"
+          echo "Pull Request URL: ${{ steps.create-pr.outputs.pull-request-url }}"
+
+      - name: Goodbye Message
+        run: echo "Workflow completed. Goodbye!"
+
