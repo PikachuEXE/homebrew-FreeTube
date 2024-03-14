@@ -2,18 +2,27 @@
 
 [![FreeTube](assets/logoColor.svg)](https://github.com/FreeTubeApp/FreeTube "https://github.com/FreeTubeApp/FreeTube")
 
+
 #### FreeTube’s Homebrew Tap for Apple Silicon
 
-Install a native Apple Silicon build of FreeTube with this Homebrew Tap maintained by the FreeTube project.[^Intel]
-
-[^Intel]: FreeTube for Intel Macs can also be installed with this tap, but it’s optional. Simply use Homebrew without this tap for Intel Mac installations.
+Install a native Apple Silicon build of FreeTube with this Homebrew Tap maintained by the FreeTube project.
 
 If you install FreeTube via Homebrew without this tap, you get an _Intel-native build_ that requires Rosetta 2 in order to run on Apple Silicon.
+(Intel Mac users, [see below](#intel-section).)
 
 
-#### Quick Installation
+#### Quick Installation on Apple Silicon
 
 1. Ensure [Homebrew](https://brew.sh) is installed.
+
+1. If you already installed FreeTube: uninstall it.
+
+   If installed from the main Homebrew cask (not this tap):
+
+    ```bash
+    # Uninstall the cask, while keeping your settings.
+    brew uninstall freetube
+    ```
 
 1. Install FreeTube with a single command:
 
@@ -38,10 +47,6 @@ If you install FreeTube via Homebrew without this tap, you get an _Intel-native 
 
   The `--no-quarantine` option bypasses Gatekeeper, enabling you to run FreeTube while saving its developers the time and expense of having to register with Apple, sign the software and get it notarized by Apple.
 
-<!--
-  For independent developers of free (libre) and open source software, registering as an Apple Developer, signing your software, and getting it notarized by Apple can be time-consuming and costly. These steps are typically required to avoid Gatekeeper restrictions on macOS. Using the `--no-quarantine` option bypasses Gatekeeper and allows you to run the software even though it is not signed or notarized.
--->
-
 - **About releases:**
 
   This repository has Apple Silicon-native FreeTube builds intended for installation with Homebrew. While direct downloads are discouraged, if you opt for that method, you’ll need to remove the Gatekeeper quarantine yourself for the app to run on your Apple Silicon Mac:
@@ -51,13 +56,17 @@ If you install FreeTube via Homebrew without this tap, you get an _Intel-native 
   /usr/bin/xattr -dr com.apple.quarantine <path/to/file>
   ```
 
-<!--
-- **More information:**
 
-  * [Apple’s Gatekeeper documentation](https://support.apple.com/guide/security/gatekeeper-and-runtime-protection-sec5599b66df/web "https://support.apple.com/guide/security/gatekeeper-and-runtime-protection-sec5599b66df/web")
+<a name="intel-section"></a>
+#### Quick Installation on Intel Macs
 
-  * [Disabling Gatekeeper for one application only](https://github.com/disable-gatekeeper/disable-gatekeeper.github.io/tree/master?tab=readme-ov-file#disabling-gatekeeper-for-one-application-only "https://github.com/disable-gatekeeper/disable-gatekeeper.github.io/tree/master?tab=readme-ov-file#disabling-gatekeeper-for-one-application-only") on [https://disable-gatekeeper.github.io](https://disable-gatekeeper.github.io "https://disable-gatekeeper.github.io").
--->
+1. Ensure [Homebrew](https://brew.sh) is installed.
+
+1. Use Homebrew without this tap to install FreeTube:
+
+```bash
+brew install freetube
+```
 
 
 #### Homebrew documentation
