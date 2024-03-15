@@ -1,0 +1,35 @@
+#! /bin/bash
+
+# Lint GitHub Actions workflow files
+
+# Installation:
+# brew install actionlint shellcheck
+# cp script/pre-commit .git/hooks/pre-commit
+# chmod +x .git/hooks/pre-commit
+
+# Usage: Every time you commit changes, the actionlint command will be
+# executed as part of the pre-commit hook.
+
+if ! command -v actionlint > /dev/null; then
+  printf "Git pre-commit hook: Warning: actionlint is not installed.\n"
+  exit 1
+fi
+
+printf "Running Git pre-commit hook: actionlint...\n"
+
+typeset -i scan_count
+scan_count=0
+for action in $(git diff --cached --name-only --diff-filter=ACM | grep --extended-regexp '^\.github/(workflows|actions)/.*\.ya?ml$'); do
+  # Run actionlint
+  if actionlint -color "$action"; then
+  # Run actionlint with disabled shellcheck integration
+  # if actionlint -color -shellcheck= "$action"; then
+    printf "✅ $action\n"
+  else
+    printf "❌ $action\n"
+    exit 1
+  fi
+  scan_count=$((scan_count+1))
+done
+
+printf "actionlint scanned %u GitHub Action file(s) and found no errors!\n" "$scan_count"
