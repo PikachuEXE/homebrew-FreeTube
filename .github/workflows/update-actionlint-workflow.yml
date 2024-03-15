@@ -18,17 +18,16 @@ env:
 
 jobs:
   update-workflow:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Get Latest Workflow and Configuration from ${{ env.source_repository_path }}
-        id: get-files
         run: |
           # Download actionlint workflow and configuration
-          echo "Downloading the latest actionlint workflow and configuration from ${{ env.source_repository_path }} repository."
+          echo "Getting the latest actionlint workflow and configuration from ${{ env.source_repository_path }} repository."
 
           # Use raw GitHub download for its strong ETag, an HTTP header identifying a resource’s version.
           # GitHub API provides a weak ETag.
@@ -79,7 +78,7 @@ jobs:
 
             # Download the file only if its ETag has changed
             if ! curl --fail --silent --show-error --location \
-              --retry 3 --retry-all-errors \
+              --retry 3 --retry-all-errors --remove-on-error \
               --etag-compare "$etag_file_path" --etag-save "$etag_file_path" \
               --remote-name --clobber \
               --output-dir "$directory_path" --create-dirs \
@@ -98,14 +97,14 @@ jobs:
               # Export variable for the processing steps
               echo "${prefix}_${transformed_base_name}_downloaded=true" >> "$GITHUB_ENV"
             else
-              echo "$file_path up to date. No changes detected."
+              echo "$file_path up-to-date. No changes detected."
               # Export variable for the processing steps
               echo "${prefix}_${transformed_base_name}_downloaded=false" >> "$GITHUB_ENV"
             fi
 
           done
 
-          echo "All files up to date or downloaded successfully."
+          echo "All files up-to-date or downloaded successfully."
 
       - name: Update Repository Owner Check in actionlint Workflow
         run: |
@@ -151,8 +150,8 @@ jobs:
             echo "Configuring actionlint to disallow GitHub configuration variables in workflow files."
   
             # Reset 'config-variables' to an empty array in .github/actionlint.yaml
-            # This excludes homebrew/brew’s configuration variables, prevents additional ones,
-            # and aligns with the empty 'config-variables' array in homebrew/core and homebrew/actions.
+            # This excludes Homebrew/brew’s configuration variables, prevents additional ones,
+            # and aligns with the empty 'config-variables' array in Homebrew/homebrew-core and Homebrew/actions.
             if ! yq eval '.config-variables = []' .github/actionlint.yaml --inplace --exit-status; then
               echo "ERROR: An error occurred during the yq operation in 'Reset config-variables' step."
               exit 1  # Exit with an error code to fail the workflow
