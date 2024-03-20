@@ -113,13 +113,13 @@ jobs:
 
             # Replace 'Homebrew' with 'PikachuEXE' in .github/workflows/actionlint.yml
             file=".github/workflows/actionlint.yml"
-  
+
             # Check the current state of the condition before attempting a substitution
             expected_condition="github.repository_owner == 'Homebrew'"
             current_upstream_condition="$(yq eval '.jobs.workflow_syntax.if' "$file")"
             # Isolate the repository owner name:
             # yq eval '.jobs.workflow_syntax.if' "$file" | sed -n "s/.*github.repository_owner == '\(.*\)'.*/\1/p"
-  
+
             # Warn and overwrite if condition is unexpected
             if [ "$current_upstream_condition" != "$expected_condition" ]; then
               # Use GitHub Actions annotation
@@ -127,7 +127,7 @@ jobs:
               echo "::warning file=${file},line=${line}::Unexpected 'workflow_syntax' condition in downloaded workflow"
               echo "Upstream: $current_upstream_condition"
               echo "Expected: $expected_condition"
-  
+
               # Replace entire condition
               if ! yq eval ".jobs.workflow_syntax.if = \"github.repository_owner == '${{ env.repository_owner }}'\"" "$file" --inplace --exit-status; then
                 echo "ERROR: An error occurred during the yq operation in 'workflow_syntax' step."
@@ -140,7 +140,7 @@ jobs:
                 exit 1  # Exit with an error code to fail the workflow
               fi
             fi
-  
+
             echo "Repository Owner Check substitution successful."
           fi
 
@@ -148,7 +148,7 @@ jobs:
         run: |
           if [ "${gh_actionlint_yaml_downloaded}" = "true" ]; then
             echo "Configuring actionlint to disallow GitHub configuration variables in workflow files."
-  
+
             # Reset 'config-variables' to an empty array in .github/actionlint.yaml
             # This excludes Homebrew/brew’s configuration variables, prevents additional ones,
             # and aligns with the empty 'config-variables' array in Homebrew/homebrew-core and Homebrew/actions.
@@ -156,23 +156,23 @@ jobs:
               echo "ERROR: An error occurred during the yq operation in 'Reset config-variables' step."
               exit 1  # Exit with an error code to fail the workflow
             fi
-  
+
             echo "'config-variables' reset successful."
           fi
 
-      - name: Check for Workflow Changes
-        run: |
-          # Check if there are any changes in the workflow files
-          if git diff --quiet; then
-            echo "No changes in workflows. Exiting."
-            exit 0
-          fi
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@v3
+        with:
+          application_id: ${{ secrets.APPLICATION_ID }}
+          application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
+          revoke_token: true
 
       - name: Create Pull Request
         id: create-pr
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: "${{ steps.get_workflow_token.outputs.token }}"
           commit-message: '[create-pull-request] Update actionlint workflow'
           delete-branch: true
           title: 'Update actionlint workflow'
