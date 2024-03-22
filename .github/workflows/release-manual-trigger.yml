@@ -1,0 +1,226 @@
+name: Build and Release (Manual Trigger)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name of the upstream release'
+        required: true
+        default: 'v0.19.2-beta'
+      node_version:
+        description: 'Node.js version to use'
+        required: true
+        default: '18.x'
+
+jobs:
+  manual-build:
+    # Use macos-14 for arm64 architecture: https://github.blog/changelog/2024-01-30-github-actions-introducing-the-new-m1-macos-runner-available-to-open-source/
+    # macos-latest refers to the macos-12 (x86_64) runner image until April–June 2024: https://github.blog/changelog/2024-01-30-github-actions-macos-14-sonoma-is-now-available/ and https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+    runs-on: macos-14
+    outputs:
+      extracted-package-version: "${{ steps.extract-version.outputs.package_version }}"
+
+    steps:
+      - name: Checkout FreeTube Repository at the Provided Release Tag
+        uses: actions/checkout@v4
+        with:
+          repository: FreeTubeApp/FreeTube
+          ref: "${{ github.event.inputs.tag_name }}"
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "${{ github.event.inputs.node_version }}"
+          # Cache the global `yarn cache dir` for faster builds by reusing dependencies.
+          # NOTE: Avoid caching the project-specific node_modules directory to prevent dependency conflicts and ensure proper cache updates. As the documentation to actions/cache states: "it can break across Node versions and won't work with npm ci."
+          cache: "yarn"
+
+      - name: Install Dependencies
+        # Use --frozen-lockfile for reproducible CI builds.
+        # NOTE: ---frozen-lockfile was renamed to --immutable in yarn 2.0.0.
+        # As of 2024-01-30, the macos-14 runner has yarn 1.22.19 installed.
+        # Upstream defines `yarn ci` as `yarn install --silent --frozen-lockfile` in package.json (see output of `jq '.scripts.ci' package.json`).
+        run: yarn ci
+
+      - name: Configure FreeTube Build
+        run: |
+          # Configure Electron Builder to build only the DMG target on macOS
+          sed -i '' "s/targets = Platform.MAC.createTarget(\[[^]]*\], arch)/targets = Platform.MAC.createTarget(\['DMG'\], arch)/" _scripts/build.js
+
+          # Configure Electron Builder artifactName to match the format used by upstream for artifact uploads
+          # NOTE: The ${arch} macro expands to arm64 on Apple Silicon, but this might not be documented yet.
+          # Verify the source code for accurate information:
+          # https://github.com/electron-userland/electron-builder/blob/master/packages/builder-util/src/arch.ts#L35-L51
+          jq '.build.artifactName = "${name}-${version}-${os}-${arch}.${ext}"' package.json > temp.json
+          mv -f temp.json package.json
+
+      - name: Build FreeTube
+        run: |
+          # Build the application and create Disk iMaGe (DMG)
+          yarn build:arm64
+          # Clean up build artifacts: remove .app directory
+          rm -rf build/mac-arm64
+
+      - name: Extract Package Version Number
+        id: extract-version
+        run: |
+          package_version="$(yq '.version' build/latest-mac.yml)"
+          echo "Package Version Number: $package_version"
+
+          # Export variable for later steps and jobs
+          echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
+
+      - name: Upload DMG Artifact
+        env:
+          PACKAGE_VERSION: "${{ steps.extract-version.outputs.package_version }}"
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeTube-DMG
+          path: "build/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg"
+          # Minimum artifact retention is 1 day
+          retention-days: 1
+          # Skip compression for faster upload of pre-compressed binary (DMG) file
+          compression-level: 0
+
+  get-release-info:
+    runs-on: ubuntu-latest
+    outputs:
+      html_url: "${{ steps.extract-info.outputs.html_url }}"
+      name: "${{ steps.extract-info.outputs.name }}"
+      prerelease: "${{ steps.extract-info.outputs.prerelease }}"
+
+    steps:
+      - name: Extract Release Information
+        id: extract-info
+        run: |
+          owner="FreeTubeApp"
+          repo="FreeTube"
+          tag_name="${{ github.event.inputs.tag_name }}"
+
+          echo "Fetching release information for release ${tag_name}..."
+
+          # Fetch releases via GitHub API
+          releases=$(
+            curl --fail --silent --show-error --location \
+              --header "Accept: application/vnd.github+json" \
+              --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              --url "https://api.github.com/repos/${owner}/${repo}/releases"
+          )
+
+          # Check if releases is empty
+          if [ -z "$releases" ]; then
+            echo "Error: Failed to fetch release information."
+            exit 1
+          fi
+
+          # Iterate through each release
+          release_found=false
+          for row in $(jq --raw-output '.[] | @base64' <<< "${releases}"); do
+              _jq() {
+               base64 --decode <<< "${row}" | jq --raw-output "${1}"
+              }
+
+              # Check if the release’s tag_name matches the desired one
+              # Allow individual redirects to GITHUB_OUTPUT
+              # shellcheck disable=SC2129
+              if [ "$(_jq '.tag_name')" == "$tag_name" ]; then
+                  # Extract and print the html_url
+                  html_url="$(_jq '.html_url')"
+                  # Extract and print the name
+                  name="$(_jq '.name')"
+                  # Extract and print the pre-release status
+                  prerelease="$(_jq '.prerelease')"
+
+                  # Export variables for later steps and jobs
+                  echo "html_url=${html_url}" >> "$GITHUB_OUTPUT"
+                  echo "name=${name}" >> "$GITHUB_OUTPUT"
+                  echo "prerelease=${prerelease}" >> "$GITHUB_OUTPUT"
+
+                  # Display extracted information
+                  echo "Release ${tag_name}:"
+                  echo "  HTML URL:      ${html_url}"
+                  echo "  Name:          ${name}"
+                  echo "  Pre-release:   ${prerelease}"
+
+                  release_found=true
+                  break
+              fi
+          done
+
+          # Check if the specified release was found
+          if [ "$release_found" = false ]; then
+            echo "Error: Release ${tag_name} not found."
+            exit 1
+          fi
+
+          echo "Fetching release information completed successfully."
+
+  manual-release:
+    needs:
+      - manual-build
+      - get-release-info
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_VERSION: "${{ needs.manual-build.outputs.extracted-package-version }}"
+
+    steps:
+      # Checkout Release Notes Template
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Using cone mode (the default) for sparse-checkout, as non-cone mode is deprecated in Git.
+          sparse-checkout: .github
+          # sparse-checkout: .github/release-notes-template.md
+          # sparse-checkout-cone-mode: false
+
+      - name: Generate Release Notes
+        run: |
+          # Set default template content
+          default_template="Release ${{ github.event.inputs.tag_name }} for Apple Silicon Homebrew Tap."
+
+          # Check if the release notes template file exists and is readable
+          if [ ! -r ".github/release-notes-template.md" ]; then
+            echo "Warning: Release notes template not readable. Using simplified default."
+            echo "$default_template" > "${{ github.workspace }}/release_notes.md"
+            echo "Release notes generated and saved to: ${{ github.workspace }}/release_notes.md"
+          else
+            # Generate release notes using the template file
+            sed \
+              -e "s/%%{release.tag_name}%%/${{ github.event.inputs.tag_name }}/g" \
+              -e "s#%%{release.download_url}%%#${{ needs.get-release-info.outputs.html_url }}#g" \
+              .github/release-notes-template.md \
+              > "${{ github.workspace }}/release_notes.md"
+            echo "Release notes generated and saved to: ${{ github.workspace }}/release_notes.md"
+          fi
+
+      - name: Download Built DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: FreeTube-DMG
+          # Document use of default destination path
+          path: ${{ github.workspace }}
+
+      - name: Create Release and Upload Artifact
+        id: gh-release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ github.workspace }}/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg
+          fail_on_unmatched_files: true
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          tag_name: "${{ github.event.inputs.tag_name }}"
+          name: "${{ needs.get-release-info.outputs.name }}"
+          # body: "Release for Apple Silicon Homebrew Tap."
+          body_path: "${{ github.workspace }}/release_notes.md"
+          prerelease: "${{ needs.get-release-info.outputs.prerelease }}"
+
+      - name: Print Release Information
+        run: |
+          echo "FreeTube built and released to Homebrew Tap for Apple Silicon:"
+          echo "  Release ID: ${{ steps.gh-release.outputs.id }}"
+          echo "  Release URL: ${{ steps.gh-release.outputs.url }}"
+          echo "  Download URL: ${{ fromJSON(steps.gh-release.outputs.assets)[0].browser_download_url }}"
+
+      - name: Completion Message
+        run: echo "Workflow 'Build and Release' completed successfully!"
