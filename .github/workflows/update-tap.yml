@@ -11,18 +11,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get Token
-        id: get_workflow_token
-        uses: peter-murray/workflow-application-token-action@v3
-        with:
-          application_id: ${{ secrets.APPLICATION_ID }}
-          application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
-          revoke_token: true
-          permissions: "contents:write, metadata:read, pull_requests:write, workflows:write"
+      - name: Checkout Repository
+        uses:
+          actions/checkout@v4
 
-      - name: Update Homebrew Cask
-        uses: eugenesvk/action-homebrew-bump-cask@3.8.4
+      - name: Download Latest Release File
+        id: download_files
+        uses: robinraju/release-downloader@v1.9
         with:
-          token: "${{ steps.get_workflow_token.outputs.token }}"
-          tap: PikachuEXE/homebrew-FreeTube
-          cask: pikachuexe-freetube
+          latest: true
+          preRelease: true
+          fileName: "*.dmg"
+          tarBall: false
+          zipBall: false
+          out-file-path: "downloads"
+
+      - name: Generate checksums
+        uses: Solratic/checksum-action@v1
+        with:
+          pattern: "downloads/*.dmg"
+          suffix: "sha256"
+
+      - name: Get Checksum
+        id: get_checksum
+        run: echo "checksum=$(cat ${{ fromJson(steps.download_files.outputs.downloaded_files)[0] }}.sha256)" >> $GITHUB_OUTPUT
+
+      - name: Echo Checksum
+        run: echo ${{ steps.get_checksum.outputs.checksum }}
