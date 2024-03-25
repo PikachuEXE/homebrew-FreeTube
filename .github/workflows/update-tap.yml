@@ -19,8 +19,9 @@ jobs:
           private-key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
 
       - name: Update Homebrew Cask
-        uses: eugenesvk/action-homebrew-bump-cask@3.8.4
+        uses: Homebrew/actions/bump-packages@master
         with:
           token: "${{ steps.get_workflow_token.outputs.token }}"
           tap: PikachuEXE/homebrew-FreeTube
-          cask: pikachuexe-freetube
+          casks: |
+            pikachuexe-freetube
