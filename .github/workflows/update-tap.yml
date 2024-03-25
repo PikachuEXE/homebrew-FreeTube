@@ -21,7 +21,7 @@ jobs:
           permissions: "contents:write, metadata:read, pull_requests:write"
 
       - name: Update Homebrew Cask
-        uses: eugenesvk/action-homebrew-bump-cask@v3.8.4
+        uses: eugenesvk/action-homebrew-bump-cask@3.8.4
         with:
           token: "${{ steps.get_workflow_token.outputs.token }}"
           tap: PikachuEXE/homebrew-FreeTube
