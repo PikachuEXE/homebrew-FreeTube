@@ -201,6 +201,15 @@ jobs:
           # Document use of default destination path
           path: ${{ github.workspace }}
 
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@v3
+        with:
+          application_id: ${{ secrets.APPLICATION_ID }}
+          application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
+          revoke_token: true
+          permissions: "contents:write, metadata:read"
+
       - name: Create Release and Upload Artifact
         id: gh-release
         uses: softprops/action-gh-release@v2
@@ -208,7 +217,7 @@ jobs:
           files: |
             ${{ github.workspace }}/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg
           fail_on_unmatched_files: true
-          token: "${{ secrets.GITHUB_TOKEN }}"
+          token: "${{ steps.get_workflow_token.outputs.token }}"
           tag_name: "${{ github.event.inputs.tag_name }}"
           name: "${{ needs.get-release-info.outputs.name }}"
           # body: "Release for Apple Silicon Homebrew Tap."
