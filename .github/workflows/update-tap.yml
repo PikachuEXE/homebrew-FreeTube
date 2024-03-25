@@ -40,3 +40,12 @@ jobs:
 
       - name: Echo Checksum
         run: echo ${{ steps.get_checksum.outputs.checksum }}
+
+      - name: Upload Checksum Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Checksum
+          path: "checksums.txt"
+          # Minimum artifact retention is 1 day
+          retention-days: 1
+          compression-level: 0
