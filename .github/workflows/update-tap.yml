@@ -27,7 +27,7 @@ jobs:
           out-file-path: "downloads"
 
       - name: Generate Checksums
-        uses: jmgilman/actions-generate-checksum@v1
+        uses: jmgilman/actions-generate-checksum@v1.0.1
         with:
           patterns: |
             downloads/*.dmg
