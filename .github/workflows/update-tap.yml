@@ -18,7 +18,7 @@ jobs:
           application_id: ${{ secrets.APPLICATION_ID }}
           application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
           revoke_token: true
-          permissions: "contents:write, metadata:read, pull_requests:write"
+          permissions: "contents:write, metadata:read, pull_requests:write, workflows:write"
 
       - name: Update Homebrew Cask
         uses: eugenesvk/action-homebrew-bump-cask@3.8.4
