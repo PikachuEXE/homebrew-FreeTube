@@ -11,6 +11,68 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repository
+        uses:
+          actions/checkout@v4
+
+      - name: Download Latest Release File
+        id: download_files
+        uses: robinraju/release-downloader@v1.9
+        with:
+          latest: true
+          preRelease: true
+          fileName: "*.dmg"
+          tarBall: false
+          zipBall: false
+          out-file-path: "downloads"
+
+      - name: Generate Checksums
+        uses: jmgilman/actions-generate-checksum@v1.0.1
+        with:
+          patterns: |
+            downloads/*.dmg
+          method: sha256
+          output: checksums.txt
+
+      - name: Get Checksum
+        id: get_checksum
+        run: echo "checksum=$(cat ${{ github.workspace }}/checksums.txt)" >> $GITHUB_OUTPUT
+
+      - name: Echo Checksum
+        run: echo ${{ steps.get_checksum.outputs.checksum }}
+
+      - name: Extract Checksum From Checksum File Content
+        uses: tmelliottjr/extract-regex-action@v1.4.0
+        id: extract_checksum
+        with:
+          regex: '^\w+'
+          flags: ""
+          input: ${{ steps.get_checksum.outputs.checksum }}
+
+      - name: Find and Replace sha256 In Cask File
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          include: "Casks/pikachuexe-freetube.rb"
+          find: 'sha256 "\w+"'
+          replace: 'sha256 "${{ steps.extract_checksum.outputs.resultString }}"'
+          regex: true
+
+      - name: Extract Version From Release
+        uses: tmelliottjr/extract-regex-action@v1.4.0
+        id: extract_version
+        with:
+          regex: '\d+(\.\d+)+'
+          flags: ""
+          input: ${{ steps.download_files.outputs.tag_name }}
+
+      - name: Find and Replace version In Cask File
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          include: "Casks/pikachuexe-freetube.rb"
+          find: 'version "\d+(\.\d+)+"'
+          replace: 'version "${{ fromJson(steps.extract_version.outputs.resultArray)[0] }}"'
+          regex: true
+
       - name: Get Token
         id: get_workflow_token
         uses: peter-murray/workflow-application-token-action@v3
@@ -18,11 +80,21 @@ jobs:
           application_id: ${{ secrets.APPLICATION_ID }}
           application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
           revoke_token: true
-          permissions: "contents:write, metadata:read, pull_requests:write, workflows:write"
 
-      - name: Update Homebrew Cask
-        uses: eugenesvk/action-homebrew-bump-cask@3.8.4
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v6
         with:
           token: "${{ steps.get_workflow_token.outputs.token }}"
-          tap: PikachuEXE/homebrew-FreeTube
-          cask: pikachuexe-freetube
+          commit-message: '[create-pull-request] Update Cask'
+          delete-branch: true
+          title: 'Update Cask'
+          body: |
+            Updated info in Cask file from [latest release (`${{ steps.download_files.outputs.tag_name }}`)](https://github.com/PikachuEXE/homebrew-FreeTube/releases/tag/${{ steps.download_files.outputs.tag_name }})
+            
+            [cpr]:
+              https://github.com/peter-evans/create-pull-request
+              (https://github.com/peter-evans/create-pull-request)
+          labels: |
+            cask-update
+            automated pr
