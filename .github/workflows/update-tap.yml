@@ -61,7 +61,7 @@ jobs:
         uses: tmelliottjr/extract-regex-action@v1.4.0
         id: extract_version
         with:
-          regex: '\d+(?:\.\d+)+'
+          regex: '\d+(\.\d+)+'
           flags: ""
           input: ${{ steps.download_files.outputs.tag_name }}
 
@@ -69,8 +69,8 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           include: "Casks/pikachuexe-freetube.rb"
-          find: 'version "\d+(?:\.\d+)+"'
-          replace: 'version "${{ steps.extract_version.outputs.resultString }}"'
+          find: 'version "\d+(\.\d+)+"'
+          replace: 'version "${{ fromJson(steps.extract_version.outputs.resultArray)[0] }}"'
           regex: true
 
       - name: Upload Updated Cask File
