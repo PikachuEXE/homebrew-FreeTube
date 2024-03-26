@@ -46,7 +46,7 @@ jobs:
         id: extract_checksum
         with:
           regex: '^\w+'
-          flags: "sm"
+          flags: ""
           input: ${{ steps.get_checksum.outputs.checksum }}
 
       - name: Find and Replace sha256 In Cask File
@@ -55,6 +55,22 @@ jobs:
           include: "Casks/pikachuexe-freetube.rb"
           find: 'sha256 "\w+"'
           replace: 'sha256 "${{ steps.extract_checksum.outputs.resultString }}"'
+          regex: true
+
+      - name: Extract Version From Release
+        uses: tmelliottjr/extract-regex-action@v1.4.0
+        id: extract_version
+        with:
+          regex: '\d+(\.\d+)+'
+          flags: ""
+          input: ${{ steps.download_files.outputs.tag_name }}
+
+      - name: Find and Replace version In Cask File
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          include: "Casks/pikachuexe-freetube.rb"
+          find: 'version "\d+(\.\d+)+"'
+          replace: 'version "${{ steps.extract_version.outputs.resultString }}"'
           regex: true
 
       - name: Upload Updated Cask File
