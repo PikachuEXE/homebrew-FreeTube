@@ -69,19 +69,15 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           include: "Casks/pikachuexe-freetube.rb"
-          find: 'version "\d+(\.\d+)+"'
+          find: 'version "\d+(?:\.\d+)+"'
           replace: 'version "${{ steps.extract_version.outputs.resultString }}"'
           regex: true
 
-      - name: Echo Checksum
-        run: |
-          echo ${{ steps.download_files.outputs.tag_name }} | ${{ steps.extract_version.outputs.resultString }} | 
-
-#      - name: Upload Updated Cask File
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: Cask File
-#          path: "Casks/pikachuexe-freetube.rb"
-#          # Minimum artifact retention is 1 day
-#          retention-days: 1
-#          compression-level: 0
+      - name: Upload Updated Cask File
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cask File
+          path: "Casks/pikachuexe-freetube.rb"
+          # Minimum artifact retention is 1 day
+          retention-days: 1
+          compression-level: 0
