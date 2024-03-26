@@ -36,10 +36,12 @@ jobs:
 
       - name: Get Checksum
         id: get_checksum
-        run: echo "checksum=$(cat ${{ github.workspace }}/checksums.txt)" >> $GITHUB_OUTPUT
+        uses: jaywcjlove/github-action-read-file@main
+        with:
+          path: checksums.txt
 
       - name: Echo Checksum
-        run: echo ${{ steps.get_checksum.outputs.checksum }}
+        run: echo ${{ steps.get_checksum.outputs.content }}
 
       - name: Extract Checksum From Checksum File Content
         uses: tmelliottjr/extract-regex-action@v1.4.0
@@ -47,7 +49,7 @@ jobs:
         with:
           regex: '^\w+'
           flags: ""
-          input: ${{ steps.get_checksum.outputs.checksum }}
+          input: ${{ steps.get_checksum.outputs.content }}
 
       - name: Find and Replace sha256 In Cask File
         uses: jacobtomlinson/gha-find-replace@v3
@@ -73,28 +75,11 @@ jobs:
           replace: 'version "${{ fromJson(steps.extract_version.outputs.resultArray)[0] }}"'
           regex: true
 
-      - name: Get Token
-        id: get_workflow_token
-        uses: peter-murray/workflow-application-token-action@v3
+      - name: Upload Updated Cask File
+        uses: actions/upload-artifact@v4
         with:
-          application_id: ${{ secrets.APPLICATION_ID }}
-          application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
-          revoke_token: true
-
-      - name: Create Pull Request
-        id: create-pr
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: "${{ steps.get_workflow_token.outputs.token }}"
-          commit-message: '[create-pull-request] Update Cask'
-          delete-branch: true
-          title: 'Update Cask'
-          body: |
-            Updated info in Cask file from [latest release (`${{ steps.download_files.outputs.tag_name }}`)](https://github.com/PikachuEXE/homebrew-FreeTube/releases/tag/${{ steps.download_files.outputs.tag_name }})
-            
-            [cpr]:
-              https://github.com/peter-evans/create-pull-request
-              (https://github.com/peter-evans/create-pull-request)
-          labels: |
-            cask-update
-            automated pr
+          name: Cask File
+          path: "Casks/pikachuexe-freetube.rb"
+          # Minimum artifact retention is 1 day
+          retention-days: 1
+          compression-level: 0
