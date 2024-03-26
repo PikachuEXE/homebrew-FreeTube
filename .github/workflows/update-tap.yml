@@ -35,17 +35,33 @@ jobs:
           output: checksums.txt
 
       - name: Get Checksum
-        id: gen_checksum
+        id: get_checksum
         run: echo "checksum=$(cat ${{ github.workspace }}/checksums.txt)" >> $GITHUB_OUTPUT
 
       - name: Echo Checksum
         run: echo ${{ steps.get_checksum.outputs.checksum }}
 
-      - name: Upload Checksum Artifact
+      - name: Extract Checksum From Checksum File Content
+        uses: tmelliottjr/extract-regex-action@v1.4.0
+        id: extract_checksum
+        with:
+          regex: '^\w+'
+          flags: "sm"
+          input: ${{ steps.get_checksum.outputs.checksum }}
+
+      - name: Find and Replace sha256 In Cask File
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          include: "Casks/pikachuexe-freetube.rb"
+          find: 'sha256 \"\w+\"'
+          replace: 'sha256 \"${{ steps.extract_checksum.outputs.resultString }}\"'
+          regex: true
+
+      - name: Upload Updated Cask File
         uses: actions/upload-artifact@v4
         with:
-          name: Checksum
-          path: "checksums.txt"
+          name: Cask File
+          path: "Casks/pikachuexe-freetube.rb"
           # Minimum artifact retention is 1 day
           retention-days: 1
           compression-level: 0
