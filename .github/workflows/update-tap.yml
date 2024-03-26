@@ -53,8 +53,8 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           include: "Casks/pikachuexe-freetube.rb"
-          find: 'sha256 \"\w+\"'
-          replace: 'sha256 \"${{ steps.extract_checksum.outputs.resultString }}\"'
+          find: 'sha256 "\w+"'
+          replace: 'sha256 "${{ steps.extract_checksum.outputs.resultString }}"'
           regex: true
 
       - name: Upload Updated Cask File
