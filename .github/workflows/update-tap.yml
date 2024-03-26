@@ -36,7 +36,7 @@ jobs:
 
       - name: Get Checksum
         id: get_checksum
-        run: echo "checksum=$(cat ${{ github.workspace }}/checksums.txt)" >> $GITHUB_OUTPUT
+        run: echo "checksum=$(cat ${{ github.workspace }}/checksums.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Echo Checksum
         run: echo ${{ steps.get_checksum.outputs.checksum }}
