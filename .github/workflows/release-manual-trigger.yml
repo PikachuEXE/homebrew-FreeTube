@@ -232,4 +232,4 @@ jobs:
           echo "  Download URL: ${{ fromJSON(steps.gh-release.outputs.assets)[0].browser_download_url }}"
 
       - name: Completion Message
-        run: echo "Workflow 'Build and Release' completed successfully!"
+        run: echo "Workflow 'Build and Release (Manual Trigger)' completed successfully!"
