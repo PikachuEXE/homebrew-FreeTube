@@ -8,7 +8,11 @@ on:
 
 jobs:
   update-homebrew-cask:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
+
+    env:
+      TAP: "pikachuexe/freetube"
+      CASK: "pikachuexe-freetube"
 
     steps:
       - name: Get Token
@@ -18,11 +22,12 @@ jobs:
           application_id: ${{ secrets.APPLICATION_ID }}
           application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
           revoke_token: true
-          permissions: "contents:write, metadata:read, pull_requests:write, workflows:write"
+          permissions: "contents:write, metadata:read, pull_requests:write"
 
-      - name: Update Homebrew Cask
-        uses: eugenesvk/action-homebrew-bump-cask@3.8.4
-        with:
-          token: "${{ steps.get_workflow_token.outputs.token }}"
-          tap: PikachuEXE/homebrew-FreeTube
-          cask: pikachuexe-freetube
+      - name: Bump Cask Definition
+        env:
+          HOMEBREW_DEVELOPER: 1
+          HOMEBREW_GITHUB_API_TOKEN: "${{ steps.get_workflow_token.outputs.token }}"
+        run: |
+          brew tap "$TAP"
+          brew bump --open-pr --casks "$TAP/$CASK"
