@@ -6,11 +6,11 @@ on:
       tag_name:
         description: 'Tag name of the upstream release'
         required: true
-        default: 'v0.19.2-beta'
+        default: 'v0.21.0-beta'
       node_version:
         description: 'Node.js version to use'
         required: true
-        default: '18.x'
+        default: '20.x'
 
 jobs:
   manual-build:
