@@ -93,7 +93,7 @@ jobs:
           token: "${{ steps.get_workflow_token.outputs.token }}"
           commit-message: '[create-pull-request] Update Cask'
           branch: "update/cask/${{ steps.download_files.outputs.tag_name }}"
-          base: ${{ github.head_ref }}
+          base: master
           delete-branch: true
           title: 'Update Cask'
           body: |
