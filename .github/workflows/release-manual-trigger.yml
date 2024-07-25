@@ -79,8 +79,6 @@ jobs:
           path: "build/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg"
           # Minimum artifact retention is 1 day
           retention-days: 1
-          # Skip compression for faster upload of pre-compressed binary (DMG) file
-          compression-level: 0
 
   get-release-info:
     runs-on: ubuntu-latest
