@@ -73,7 +73,7 @@ jobs:
       - name: Upload DMG Artifact
         env:
           PACKAGE_VERSION: "${{ steps.extract-version.outputs.package_version }}"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: FreeTube-DMG
           path: "build/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg"
