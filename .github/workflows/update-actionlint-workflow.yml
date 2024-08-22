@@ -89,6 +89,14 @@ jobs:
             # Read the ETag value after downloading
             current_etag=$(< "$etag_file_path")
 
+            # Check that the ETag value is nonempty
+            if test -n "$current_etag"; then
+              echo "current_etag exists and is non-empty. Continuing..."
+            else
+              echo "current_etag is empty or does not exist. Exiting..."
+              exit 1  # Exit with an error code to fail the workflow
+            fi
+
             # Check if the ETag values differ
             if [ "$previous_etag" != "$current_etag" ]; then
               echo "$file_path was downloaded."
