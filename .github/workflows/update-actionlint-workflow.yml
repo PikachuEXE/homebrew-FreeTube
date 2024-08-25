@@ -76,8 +76,17 @@ jobs:
 
             # Download the file only if its ETag has changed
             if ! curl --fail --silent --show-error --location \
+              --retry 3 --retry-all-errors \
+              --etag-save "$etag_file_path" \
+              --output "/dev/null" \
+              --url "https://raw.githubusercontent.com/${{ env.source_repository_path }}/${{ env.source_repository_branch }}/$file_path"; then
+              echo "Error saving ETag for $file_path."
+              echo "::error::cURL error: Failed to save ETag for $file_path."
+              exit 1  # Exit with an error code to fail the workflow
+            fi
+            if ! curl --fail --silent --show-error --location \
               --retry 3 --retry-all-errors --remove-on-error \
-              --etag-compare "$etag_file_path" --etag-save "$etag_file_path" \
+              --etag-compare "$etag_file_path" \
               --remote-name --clobber \
               --output-dir "$directory_path" --create-dirs \
               --url "https://raw.githubusercontent.com/${{ env.source_repository_path }}/${{ env.source_repository_branch }}/$file_path"; then
