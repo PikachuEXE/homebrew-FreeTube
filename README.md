@@ -5,7 +5,7 @@
 
 #### FreeTube’s Homebrew Tap for Apple Silicon
 
-Install a native Apple Silicon build of FreeTube with this Homebrew Tap maintained by the FreeTube project.
+Install a native Apple Silicon build of FreeTube with this Homebrew Tap.
 
 If you install FreeTube via Homebrew without this tap, you get an _Intel-native build_ that requires Rosetta 2 in order to run on Apple Silicon.
 (Intel Mac users, [see below](#intel-section).)
