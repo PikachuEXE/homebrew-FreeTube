@@ -10,6 +10,8 @@ Install a native Apple Silicon build of FreeTube with this Homebrew Tap.
 If you install FreeTube via Homebrew without this tap, you get an _Intel-native build_ that requires Rosetta 2 in order to run on Apple Silicon.
 (Intel Mac users, [see below](#intel-section).)
 
+Updating Apple Silicon build also requires non standard command, [see below](#arm-update-section)
+
 
 #### Quick Installation on Apple Silicon
 
@@ -67,6 +69,21 @@ If you install FreeTube via Homebrew without this tap, you get an _Intel-native 
 ```bash
 brew install freetube
 ```
+
+
+<a name="arm-update-section"></a>
+#### Update/Reinstall on Apple Silicon
+`--no-quarantine` is still required for these actions (i.e. `brew install --no-quarantine` + `brew upgrade` = App won't run if it's updated)
+So you still have to run
+```shell
+# Upgrade
+brew upgrade --no-quarantine pikachuexe/freetube/pikachuexe-freetube
+
+# Reinstall
+brew reinstall --no-quarantine pikachuexe/freetube/pikachuexe-freetube
+```
+
+Security Note: If you run `brew upgrade --no-quarantine` (without cask name) it upgrades all installed casks with `--no-quarantine`. Be sure to run this only if that's what you want.
 
 
 #### Homebrew documentation
