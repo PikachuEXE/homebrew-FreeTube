@@ -18,9 +18,10 @@ env:
 jobs:
   workflow_syntax:
     if: github.repository_owner == 'PikachuEXE'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
-      image: ghcr.io/homebrew/ubuntu22.04:master
+      # https://github.com/Homebrew/brew/pkgs/container/ubuntu24.04
+      image: ghcr.io/homebrew/ubuntu24.04:latest
     steps:
       - name: Set up Homebrew
         id: setup-homebrew

@@ -6,17 +6,17 @@ on:
       tag_name:
         description: 'Tag name of the upstream release'
         required: true
-        default: 'v0.21.0-beta'
+        default: 'v0.23.0-beta'
       node_version:
         description: 'Node.js version to use'
         required: true
-        default: '20.x'
+        default: '22.x'
 
 jobs:
   manual-build:
-    # Use macos-14 for arm64 architecture: https://github.blog/changelog/2024-01-30-github-actions-introducing-the-new-m1-macos-runner-available-to-open-source/
-    # macos-latest refers to the macos-12 (x86_64) runner image until April–June 2024: https://github.blog/changelog/2024-01-30-github-actions-macos-14-sonoma-is-now-available/ and https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-    runs-on: macos-14
+    # macos-latest refers to macOS Arm64
+    # https://github.com/actions/runner-images
+    runs-on: macos-latest
     outputs:
       extracted-package-version: "${{ steps.extract-version.outputs.package_version }}"
 
