@@ -31,7 +31,7 @@ jobs:
           out-file-path: "downloads"
 
       - name: Generate Checksums
-        uses: jmgilman/actions-generate-checksum@v1.0.1
+        uses: jmgilman/actions-generate-checksum@3ea6dc9bf8eecf28e2ecc982fab683484a1a8561 # v1.0.1
         with:
           patterns: |
             downloads/*.dmg
@@ -46,7 +46,7 @@ jobs:
         run: echo ${{ steps.get_checksum.outputs.checksum }}
 
       - name: Extract Checksum From Checksum File Content
-        uses: tmelliottjr/extract-regex-action@v1.5.0
+        uses: tmelliottjr/extract-regex-action@2b16463481549ebe7270584fe9e65631a0235bfd # v1.5.0
         id: extract_checksum
         with:
           regex: '^\w+'
@@ -54,7 +54,7 @@ jobs:
           input: ${{ steps.get_checksum.outputs.checksum }}
 
       - name: Find and Replace sha256 In Cask File
-        uses: jacobtomlinson/gha-find-replace@v3
+        uses: jacobtomlinson/gha-find-replace@2ff30f644d2e0078fc028beb9193f5ff0dcad39e # v3
         with:
           include: "Casks/pikachuexe-freetube.rb"
           find: 'sha256 "\w+"'
@@ -62,7 +62,7 @@ jobs:
           regex: true
 
       - name: Extract Version From Release
-        uses: tmelliottjr/extract-regex-action@v1.5.0
+        uses: tmelliottjr/extract-regex-action@2b16463481549ebe7270584fe9e65631a0235bfd # v1.5.0
         id: extract_version
         with:
           regex: '\d+(\.\d+)+'
@@ -70,7 +70,7 @@ jobs:
           input: ${{ steps.download_files.outputs.tag_name }}
 
       - name: Find and Replace version In Cask File
-        uses: jacobtomlinson/gha-find-replace@v3
+        uses: jacobtomlinson/gha-find-replace@2ff30f644d2e0078fc028beb9193f5ff0dcad39e # v3
         with:
           include: "Casks/pikachuexe-freetube.rb"
           find: 'version "\d+(\.\d+)+"'
@@ -79,7 +79,7 @@ jobs:
 
       - name: Get Token
         id: get_workflow_token
-        uses: peter-murray/workflow-application-token-action@v4
+        uses: peter-murray/workflow-application-token-action@8e4e6fbf6fcc8a272781d97597969d21b3812974 # v4.0.0
         with:
           application_id: ${{ secrets.APPLICATION_ID }}
           application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
@@ -88,7 +88,7 @@ jobs:
 
       - name: Create Pull Request
         id: create-pr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@67ccf781d68cd99b580ae25a5c18a1cc84ffff1f # v7.0.6
         with:
           token: "${{ steps.get_workflow_token.outputs.token }}"
           commit-message: '[create-pull-request] Update Cask'
