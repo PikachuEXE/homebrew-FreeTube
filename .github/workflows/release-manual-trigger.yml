@@ -28,7 +28,7 @@ jobs:
           ref: "${{ github.event.inputs.tag_name }}"
 
       - name: Use Node.js
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: "${{ github.event.inputs.node_version }}"
           # Cache the global `yarn cache dir` for faster builds by reusing dependencies.
@@ -73,7 +73,7 @@ jobs:
       - name: Upload DMG Artifact
         env:
           PACKAGE_VERSION: "${{ steps.extract-version.outputs.package_version }}"
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: FreeTube-DMG
           path: "build/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg"
@@ -195,7 +195,7 @@ jobs:
           fi
 
       - name: Download Built DMG
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: FreeTube-DMG
           # Document use of default destination path
