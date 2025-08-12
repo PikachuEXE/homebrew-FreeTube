@@ -13,6 +13,15 @@ If you install FreeTube via Homebrew without this tap, you get an _Intel-native 
 Updating Apple Silicon build also requires non standard command, [see below](#arm-update-section)
 
 
+Warning: macOS's Gatekeeper has been disabled for this Cask
+
+According to the vendor, the Gatekeeper quarantine attribute breaks the app and needs to be removed. This Cask, `#{token}`, automatically removes the quarantine attribute. No further action is required.
+
+For more information:
+- https://docs.freetubeapp.io/faq/#macos-freetube-is-damaged-and-cant-be-opened-you-should-move-it-to-the-trash
+- https://docs.brew.sh/FAQ#why-cant-i-open-a-mac-app-from-an-unidentified-developer
+
+
 #### Quick Installation on Apple Silicon
 
 1. Ensure [Homebrew](https://brew.sh) is installed.
@@ -29,7 +38,7 @@ Updating Apple Silicon build also requires non standard command, [see below](#ar
 1. Install FreeTube with a single command:
 
     ```bash
-    brew install --no-quarantine pikachuexe/freetube/pikachuexe-freetube
+    brew install pikachuexe/freetube/pikachuexe-freetube
     ```
 
     Or, if you prefer step-by-step:
@@ -39,7 +48,7 @@ Updating Apple Silicon build also requires non standard command, [see below](#ar
     brew tap pikachuexe/freetube
 
     # Install FreeTube from the tap.
-    brew install --no-quarantine pikachuexe-freetube
+    brew install pikachuexe-freetube
     ```
 
 
@@ -55,7 +64,9 @@ Updating Apple Silicon build also requires non standard command, [see below](#ar
 
   ```bash
   # Replace <path/to/file> with the actual path to your downloaded file.
-  /usr/bin/xattr -dr com.apple.quarantine <path/to/file>
+  /usr/bin/xattr -d com.apple.quarantine <path/to/file>
+  # If you are using the default app folder:
+  /usr/bin/xattr -d com.apple.quarantine /Applications/FreeTube.app
   ```
 
 
@@ -77,13 +88,11 @@ brew install freetube
 So you still have to run
 ```shell
 # Upgrade
-brew upgrade --no-quarantine pikachuexe/freetube/pikachuexe-freetube
+brew upgrade pikachuexe/freetube/pikachuexe-freetube
 
 # Reinstall
-brew reinstall --no-quarantine pikachuexe/freetube/pikachuexe-freetube
+brew reinstall pikachuexe/freetube/pikachuexe-freetube
 ```
-
-Security Note: If you run `brew upgrade --no-quarantine` (without cask name) it upgrades all installed casks with `--no-quarantine`. Be sure to run this only if that's what you want.
 
 
 #### Homebrew documentation

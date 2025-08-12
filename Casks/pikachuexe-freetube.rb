@@ -18,6 +18,16 @@ cask "pikachuexe-freetube" do
 
   app "FreeTube.app"
 
+  postflight do
+    ohai "Releasing #{token} from quarantine"
+    system_command("/usr/bin/xattr",
+                     args: [
+                         "-d",
+                       "com.apple.quarantine",
+                       "#{appdir}/FreeTube.app",
+                     ])
+  end
+
   uninstall quit: "io.freetubeapp.freetube"
 
   zap trash: [
@@ -26,4 +36,14 @@ cask "pikachuexe-freetube" do
     "~/Library/Preferences/io.freetubeapp.freetube.plist",
     "~/Library/Saved Application State/io.freetubeapp.freetube.savedState",
   ]
+
+  caveats <<~EOS
+    Warning: macOS's Gatekeeper has been disabled for this Cask
+
+    According to the vendor, the Gatekeeper quarantine attribute breaks the app and needs to be removed. This Cask, `#{token}`, automatically removes the quarantine attribute. No further action is required.
+
+    For more information:
+    - https://docs.freetubeapp.io/faq/#macos-freetube-is-damaged-and-cant-be-opened-you-should-move-it-to-the-trash
+    - https://docs.brew.sh/FAQ#why-cant-i-open-a-mac-app-from-an-unidentified-developer
+  EOS
 end
