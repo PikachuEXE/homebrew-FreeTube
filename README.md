@@ -15,7 +15,7 @@ Updating Apple Silicon build also requires non standard command, [see below](#ar
 
 Warning: macOS's Gatekeeper has been disabled for this Cask
 
-According to the vendor, the Gatekeeper quarantine attribute breaks the app and needs to be removed. This Cask, `#{token}`, automatically removes the quarantine attribute. No further action is required.
+According to the vendor, the Gatekeeper quarantine attribute breaks the app and needs to be removed. This Cask automatically removes the quarantine attribute. No further action is required.
 
 For more information:
 - https://docs.freetubeapp.io/faq/#macos-freetube-is-damaged-and-cant-be-opened-you-should-move-it-to-the-trash
@@ -52,24 +52,6 @@ For more information:
     ```
 
 
-#### About `--no-quarantine`
-
-- **Why use it?**
-
-  The `--no-quarantine` option bypasses Gatekeeper, enabling you to run FreeTube while saving its developers the time and expense of having to register with Apple, sign the software and get it notarized by Apple.
-
-- **About releases:**
-
-  This repository has Apple Silicon-native FreeTube builds intended for installation with Homebrew. While direct downloads are discouraged, if you opt for that method, you’ll need to remove the Gatekeeper quarantine yourself for the app to run on your Apple Silicon Mac:
-
-  ```bash
-  # Replace <path/to/file> with the actual path to your downloaded file.
-  /usr/bin/xattr -d com.apple.quarantine <path/to/file>
-  # If you are using the default app folder:
-  /usr/bin/xattr -d com.apple.quarantine /Applications/FreeTube.app
-  ```
-
-
 <a name="intel-section"></a>
 #### Quick Installation on Intel Macs
 
@@ -84,14 +66,23 @@ brew install freetube
 
 <a name="arm-update-section"></a>
 #### Update/Reinstall on Apple Silicon
-`--no-quarantine` is still required for these actions (i.e. `brew install --no-quarantine` + `brew upgrade` = App won't run if it's updated)
-So you still have to run
 ```shell
 # Upgrade
 brew upgrade pikachuexe/freetube/pikachuexe-freetube
 
 # Reinstall
 brew reinstall pikachuexe/freetube/pikachuexe-freetube
+```
+
+
+#### Uninstall on Apple Silicon
+If you want to install another version / via another way
+```shell
+# Upgrade
+brew uninstall pikachuexe/freetube/pikachuexe-freetube
+
+# Reinstall
+brew untap pikachuexe/freetube
 ```
 
 
