@@ -22,7 +22,7 @@ cask "pikachuexe-freetube" do
     ohai "Releasing #{token} from quarantine"
     system_command("/usr/bin/xattr",
                      args: [
-                         "-d",
+                         "-dr",
                        "com.apple.quarantine",
                        "#{appdir}/FreeTube.app",
                      ])
