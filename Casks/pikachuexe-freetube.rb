@@ -21,11 +21,11 @@ cask "pikachuexe-freetube" do
   postflight do
     ohai "Releasing #{token} from quarantine"
     system_command("/usr/bin/xattr",
-                     args: [
-                         "-dr",
-                       "com.apple.quarantine",
-                       "#{appdir}/FreeTube.app",
-                     ])
+                   args: [
+                     "-dr",
+                     "com.apple.quarantine",
+                     "#{appdir}/FreeTube.app",
+                   ])
   end
 
   uninstall quit: "io.freetubeapp.freetube"
