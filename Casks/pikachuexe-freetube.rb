@@ -1,6 +1,6 @@
 cask "pikachuexe-freetube" do
-  version "0.23.7"
-  sha256 "4cbf772718a6c66e1f2b4bceeadec3cdc70a610dafc9bcc035a251cc4dcad075"
+  version "0.23.8"
+  sha256 "bb856cde06e425d5538554d13fdf21ba411b81748b0ec9e1f931721c98db6522"
 
   url "https://github.com/PikachuEXE/homebrew-FreeTube/releases/download/v#{version}-beta/freetube-#{version}-mac-arm64.dmg"
   name "FreeTube"
