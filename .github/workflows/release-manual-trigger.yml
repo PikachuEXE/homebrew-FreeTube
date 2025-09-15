@@ -4,16 +4,46 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag name of the upstream release'
+        description: 'Tag name of the upstream release (use default "latest" to use latest tag)'
         required: true
-        default: 'v0.23.0-beta'
+        default: 'latest'
       node_version:
         description: 'Node.js version to use'
         required: true
         default: '22.x'
 
 jobs:
+  extract-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: "${{ steps.extract-tag.outputs.tag }}"
+
+    steps:
+      - uses: yakubique/github-releases@v1.2
+        id: get-releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          repository: FreeTubeApp/FreeTube
+          sort: 'desc'
+          pre: 'true'
+      - name: Get Latest Tag For Repo
+        id: get-latest-tag
+        run: |
+          echo "tag=${{ fromJSON(steps.get-releases.outputs.releases)[0] }}" >> "$GITHUB_OUTPUT"
+      - name: Output Tag For Checkout
+        id: extract-tag
+        run: |
+          if [[ "${{ github.event.inputs.tag_name }}" != "latest" ]]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ steps.get-latest-tag.outputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+
   manual-build:
+    needs:
+      - extract-tag
     # macos-latest refers to macOS Arm64
     # https://github.com/actions/runner-images
     runs-on: macos-latest
@@ -25,7 +55,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: FreeTubeApp/FreeTube
-          ref: "${{ github.event.inputs.tag_name }}"
+          ref: "${{ needs.extract-tag.outputs.tag }}"
 
       - name: Use Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -83,6 +113,8 @@ jobs:
           compression-level: 0
 
   get-release-info:
+    needs:
+      - extract-tag
     runs-on: ubuntu-latest
     outputs:
       html_url: "${{ steps.extract-info.outputs.html_url }}"
@@ -95,7 +127,7 @@ jobs:
         run: |
           owner="FreeTubeApp"
           repo="FreeTube"
-          tag_name="${{ github.event.inputs.tag_name }}"
+          tag_name="${{ needs.extract-tag.outputs.tag }}"
 
           echo "Fetching release information for release ${tag_name}..."
 
@@ -177,7 +209,7 @@ jobs:
       - name: Generate Release Notes
         run: |
           # Set default template content
-          default_template="Release ${{ github.event.inputs.tag_name }} for Apple Silicon Homebrew Tap."
+          default_template="Release ${{ needs.extract-tag.outputs.tag }} for Apple Silicon Homebrew Tap."
 
           # Check if the release notes template file exists and is readable
           if [ ! -r ".github/release-notes-template.md" ]; then
@@ -187,7 +219,7 @@ jobs:
           else
             # Generate release notes using the template file
             sed \
-              -e "s/%%{release.tag_name}%%/${{ github.event.inputs.tag_name }}/g" \
+              -e "s/%%{release.tag_name}%%/${{ needs.extract-tag.outputs.tag }}/g" \
               -e "s#%%{release.download_url}%%#${{ needs.get-release-info.outputs.html_url }}#g" \
               .github/release-notes-template.md \
               > "${{ github.workspace }}/release_notes.md"
@@ -218,7 +250,7 @@ jobs:
             ${{ github.workspace }}/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg
           fail_on_unmatched_files: true
           token: "${{ steps.get_workflow_token.outputs.token }}"
-          tag_name: "${{ github.event.inputs.tag_name }}"
+          tag_name: "${{ needs.extract-tag.outputs.tag }}"
           name: "${{ needs.get-release-info.outputs.name }}"
           # body: "Release for Apple Silicon Homebrew Tap."
           body_path: "${{ github.workspace }}/release_notes.md"
