@@ -190,6 +190,7 @@ jobs:
 
   manual-release:
     needs:
+      - extract-tag
       - manual-build
       - get-release-info
     runs-on: ubuntu-latest
