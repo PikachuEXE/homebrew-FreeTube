@@ -1,0 +1,69 @@
+name: Bump cask on schedule or request
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every 3 hours 25 minutes past the hour
+    - cron: "25 */3 * * *"
+
+jobs:
+  autobump:
+    if: ${{ github.repository == 'pikachuexe/homebrew-freetube' }}
+    env:
+      HOMEBREW_DEVELOPER: 1
+      TAP: 'pikachuexe/freetube'
+      CASK: 'pikachuexe-freetube'
+    runs-on: macos-latest
+    steps:
+
+      - name: Get Token
+        id: app-token
+        uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
+        with:
+          app-id: ${{ secrets.APPLICATION_ID }}
+          private-key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
+          permission-contents: write
+          permission-metadata: read
+          permission-pull-requests: write
+          # token is masked, and revoked in the post step of the action
+
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+        with:
+          core: false
+          cask: false
+          brew-gh-api-token: ${{ steps.app-token.outputs.token }}
+
+      # autobump on workflow_dispatch
+      - name: Bump casks (dispatched)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ steps.app-token.outputs.token }}
+          HOMEBREW_GIT_COMMITTER_NAME: ${{ github.actor }}
+          HOMEBREW_GIT_COMMITTER_EMAIL: '${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com'
+        continue-on-error: true
+        run: |
+          brew tap "$TAP"
+          brew bump --no-fork --open-pr --casks --tap "$TAP" "$CASK"
+
+      # autobump on schedule
+      - name: Get User ID for bot
+        if: ${{ github.event_name == 'scheduled' }}
+        # https://github.com/actions/create-github-app-token#configure-git-cli-for-an-apps-bot-user
+        id: get-bot-id
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          echo "user_id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
+      - name: Bump casks (scheduled)
+        if: ${{ github.event_name == 'scheduled' }}
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ steps.app-token.outputs.token }}
+          HOMEBREW_GIT_COMMITTER_NAME: '${{ steps.app-token.outputs.app-slug }}[bot]'
+          HOMEBREW_GIT_COMMITTER_EMAIL: '${{ steps.get-bot-id.outputs.user_id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+        continue-on-error: true
+        run: |
+          brew tap "$TAP"
+          brew bump --no-fork --open-pr --casks --tap "$TAP" "$CASK"
