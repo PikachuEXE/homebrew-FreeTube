@@ -1,8 +1,8 @@
 cask "pikachuexe-freetube" do
   version "0.23.12"
-  sha256 "b37164fe12d0f03dddf96bcee572958fec6b31ff49e467a9682718bee7277fa0"
+  sha256 "6b70398d0453186b0f2087ac684eebb0c17eb847c75f4ed4e1507cea6d8eed47"
 
-  url "https://github.com/PikachuEXE/homebrew-FreeTube/releases/download/v#{version}-beta/freetube-#{version}-mac-arm64.dmg"
+  url "https://github.com/FreeTubeApp/FreeTube/releases/download/v#{version}-beta/freetube-#{version}-beta-mac-arm64.dmg"
   name "FreeTube"
   desc "YouTube player focusing on privacy"
   homepage "https://github.com/FreeTubeApp/FreeTube"
