@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Checkout Repository
         uses:
-          actions/checkout@v5
+          actions/checkout@v6
 
       - name: Download Latest Release File
         id: download_files
