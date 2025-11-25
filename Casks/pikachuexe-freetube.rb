@@ -1,8 +1,11 @@
 cask "pikachuexe-freetube" do
-  version "0.23.12"
-  sha256 "b37164fe12d0f03dddf96bcee572958fec6b31ff49e467a9682718bee7277fa0"
+  arch arm: "arm64", intel: "x64"
 
-  url "https://github.com/PikachuEXE/homebrew-FreeTube/releases/download/v#{version}-beta/freetube-#{version}-mac-arm64.dmg"
+  version "0.23.12"
+  sha256 arm:   "6b70398d0453186b0f2087ac684eebb0c17eb847c75f4ed4e1507cea6d8eed47",
+         intel: "93b4d0553653a7c243b7bf7fd875441b689ddc57430b5a6e88dcc2ba865eb100"
+
+  url "https://github.com/FreeTubeApp/FreeTube/releases/download/v#{version}-beta/freetube-#{version}-mac-#{arch}.dmg"
   name "FreeTube"
   desc "YouTube player focusing on privacy"
   homepage "https://github.com/FreeTubeApp/FreeTube"
@@ -13,7 +16,6 @@ cask "pikachuexe-freetube" do
   end
 
   conflicts_with cask: "freetube"
-  depends_on arch: :arm64
   depends_on macos: ">= :big_sur"
 
   app "FreeTube.app"
