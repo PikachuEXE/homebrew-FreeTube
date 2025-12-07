@@ -58,7 +58,7 @@ jobs:
           ref: "${{ needs.extract-tag.outputs.tag }}"
 
       - name: Use Node.js
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: "${{ github.event.inputs.node_version }}"
           # Cache the global `yarn cache dir` for faster builds by reusing dependencies.
@@ -245,7 +245,7 @@ jobs:
 
       - name: Create Release and Upload Artifact
         id: gh-release
-        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           files: |
             ${{ github.workspace }}/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg
