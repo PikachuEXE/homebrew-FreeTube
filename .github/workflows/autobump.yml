@@ -49,7 +49,7 @@ jobs:
 
       # autobump on schedule
       - name: Get User ID for bot
-        if: ${{ github.event_name == 'scheduled' }}
+        if: ${{ github.event_name == 'schedule' }}
         # https://github.com/actions/create-github-app-token#configure-git-cli-for-an-apps-bot-user
         id: get-bot-id
         env:
@@ -58,7 +58,7 @@ jobs:
           echo "user_id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
       - name: Bump casks (scheduled)
-        if: ${{ github.event_name == 'scheduled' }}
+        if: ${{ github.event_name == 'schedule' }}
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ steps.app-token.outputs.token }}
           HOMEBREW_GIT_COMMITTER_NAME: '${{ steps.app-token.outputs.app-slug }}[bot]'
