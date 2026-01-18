@@ -52,13 +52,13 @@ jobs:
 
     steps:
       - name: Checkout FreeTube Repository at the Provided Release Tag
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           repository: FreeTubeApp/FreeTube
           ref: "${{ needs.extract-tag.outputs.tag }}"
 
       - name: Use Node.js
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: "${{ github.event.inputs.node_version }}"
           # Cache the global `yarn cache dir` for faster builds by reusing dependencies.
@@ -103,7 +103,7 @@ jobs:
       - name: Upload DMG Artifact
         env:
           PACKAGE_VERSION: "${{ steps.extract-version.outputs.package_version }}"
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: FreeTube-DMG
           path: "build/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg"
@@ -200,7 +200,7 @@ jobs:
     steps:
       # Checkout Release Notes Template
       - name: Checkout Repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           # Using cone mode (the default) for sparse-checkout, as non-cone mode is deprecated in Git.
           sparse-checkout: .github
@@ -228,7 +228,7 @@ jobs:
           fi
 
       - name: Download Built DMG
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: FreeTube-DMG
           # Document use of default destination path
@@ -245,7 +245,7 @@ jobs:
 
       - name: Create Release and Upload Artifact
         id: gh-release
-        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2.4.1
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           files: |
             ${{ github.workspace }}/freetube-${{ env.PACKAGE_VERSION }}-mac-arm64.dmg
