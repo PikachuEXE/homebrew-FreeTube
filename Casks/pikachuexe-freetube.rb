@@ -14,7 +14,7 @@ cask "pikachuexe-freetube" do
 
   conflicts_with cask: "freetube"
   depends_on arch: :arm64
-  depends_on macos: ">= :big_sur"
+  depends_on macos: ">= :monterey"
 
   app "FreeTube.app"
 
