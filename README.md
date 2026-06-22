@@ -47,6 +47,9 @@ For more information:
     # Add the FreeTube tap (required only once).
     brew tap pikachuexe/freetube
 
+    # Trust this tap's FreeTube.
+    brew trust --cask pikachuexe/freetube/pikachuexe-freetube
+
     # Install FreeTube from the tap.
     brew install pikachuexe-freetube
     ```
@@ -78,10 +81,10 @@ brew reinstall pikachuexe/freetube/pikachuexe-freetube
 #### Uninstall on Apple Silicon
 If you want to install another version / via another way
 ```shell
-# Upgrade
+# Uninstall this tap's FreeTube
 brew uninstall pikachuexe/freetube/pikachuexe-freetube
 
-# Reinstall
+# Untap this tap
 brew untap pikachuexe/freetube
 ```
 
