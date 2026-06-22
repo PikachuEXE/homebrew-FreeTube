@@ -47,8 +47,8 @@ For more information:
     # Add the FreeTube tap (required only once).
     brew tap pikachuexe/freetube
 
-    # Trust this tap's FreeTube
-    brew trust --cask pikachuexe/freetube/pikachuexe-freetube.
+    # Trust this tap's FreeTube.
+    brew trust --cask pikachuexe/freetube/pikachuexe-freetube
 
     # Install FreeTube from the tap.
     brew install pikachuexe-freetube
